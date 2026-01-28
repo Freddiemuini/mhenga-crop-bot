@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgriBot - Crop Disease Identification</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+
+    <!-- Header --
+    <header class="text-center mb-10">
+      <div class="inline-flex items-center mb-4">
+        <span class="text-3xl text-green-600 mr-2"><i class="fa-solid fa-leaf"></i></span>
+        <h1 class="text-3xl font-bold text-gray-800">AgriBot</h1>
+      </div>
+      <p class="text-gray-600">AI-powered crop disease diagnosis & weather insights</p>
+    </header>
+
+    <!-- LOGIN / SIGNUP / RESET -->
+    <div id="auth-container" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-bold text-gray-700 mb-4" id="auth-title">Login</h2>
+      
+      <!-- Auth Form -->
+      <form id="auth-form" class="space-y-4">
+        <input type="text" id="name" placeholder="Name" class="w-full px-3 py-2 border rounded-lg hidden">
+        <input type="email" id="email" placeholder="Email" class="w-full px-3 py-2 border rounded-lg" required>
+        <input type="password" id="password" placeholder="Password" class="w-full px-3 py-2 border rounded-lg" required>
+        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
+          Submit
+        </button>
+      </form>
+
+      <!-- Forgot Password -->
+      <p class="text-sm text-gray-600 mt-4 text-center">
+        <a href="#" id="forgot-password" class="text-blue-500">Forgot password?</a>
+      </p>
+
+      <!-- Toggle Login/Signup -->
+      <p class="text-sm text-gray-600 mt-2 text-center">
+        <span id="toggle-auth">Don't have an account? <a href="#" class="text-blue-500">Sign up</a></span>
+      </p>
+
+      <!-- Reset Request Form -->
+      <form id="reset-request-form" class="space-y-4 hidden mt-4">
+        <input type="email" id="reset-email" placeholder="Enter your email" class="w-full px-3 py-2 border rounded-lg" required>
+        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          Send Reset Link
+        </button>
+        <p class="text-sm text-gray-600 text-center">
+          <a href="#" id="back-to-login" class="text-green-500">Back to Login</a>
+        </p>
+      </form>
+
+      <!-- Reset Confirm Form -->
+      <form id="reset-confirm-form" class="space-y-4 hidden mt-4">
+        <input type="text" id="reset-token" placeholder="Paste your reset token" class="w-full px-3 py-2 border rounded-lg" required>
+        <input type="password" id="new-password" placeholder="New Password" class="w-full px-3 py-2 border rounded-lg" required>
+        <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+          Reset Password
+        </button>
+        <p class="text-sm text-gray-600 text-center">
+          <a href="#" id="back-to-login-2" class="text-green-500">Back to Login</a>
+        </p>
+      </form>
+    </div>
+
+    <!-- APP CONTENT -->
+    <div id="app-container" class="bg-white rounded-lg shadow-lg p-6 mb-8 hidden">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-2">
+        <p class="text-gray-600">
+          Welcome, <span id="user-name"></span> 🎉 (<span id="user-email"></span>)
+        </p>
+        <div class="flex gap-2">
+          <button id="logout-button" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- File Upload -->
+      <div id="drop-zone" class="border-2 border-dashed border-green-600 rounded-lg p-6 text-center cursor-pointer mb-4" title="Click or drag image to upload">
+        <input type="file" id="fileInput" accept="image/*" class="hidden" aria-label="Upload image file">
+        <p class="text-gray-500">Drag & drop or <span class="text-green-600 font-bold">browse</span> an image</p>
+      </div>
+      <div id="file-info" class="text-center text-gray-700 hidden"></div>
+
+      <!-- Analyze Button -->
+      <button id="analyze-button" class="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50" disabled>
+        Analyze
+      </button>
+
+      <!-- Results -->
+      <div id="results-view" class="hidden mt-6"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/analyze.js"></script>
+</body>
+</html>
