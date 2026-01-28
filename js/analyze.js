@@ -2,6 +2,8 @@
  * Analysis & File Upload Module
  */
 
+const API_BASE = "https://mhenga-crop-bot.onrender.com";
+
 let selectedFile = null;
 let resultsView = null;
 let fileInfo = null;

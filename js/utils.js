@@ -2,6 +2,8 @@
  * Utility Functions
  */
 
+const API_BASE = "https://mhenga-crop-bot.onrender.com";
+
 /**
  * Format temperature for display
  */
