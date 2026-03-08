@@ -1,28 +1,16 @@
-/**
- * Analysis & File Upload Module
- */
-
-const API_BASE = "https://mhenga-crop-bot.onrender.com";
-
 let selectedFile = null;
 let resultsView = null;
 let fileInfo = null;
 let analyzeButton = null;
+let analyzeHandler = null;
 
-/**
- * Initialize analyze module
- */
 function initAnalyze() {
   console.log("initAnalyze() called");
-  
-  // Get DOM Elements (ensure they exist)
   const dropZone = document.getElementById("drop-zone");
   const fileInput = document.getElementById("fileInput");
   fileInfo = document.getElementById("file-info");
   analyzeButton = document.getElementById("analyze-button");
   resultsView = document.getElementById("results-view");
-  
-  // Safety check - if elements don't exist, return
   if (!dropZone || !fileInput || !analyzeButton) {
     console.error("Analyze module: Required DOM elements not found", {
       dropZone: !!dropZone,
@@ -33,42 +21,32 @@ function initAnalyze() {
     });
     return;
   }
-  
   console.log("Analyze module: All DOM elements found, attaching listeners");
-  
-  // File input change handler - this fires when a file is selected
   fileInput.addEventListener("change", (e) => {
     console.log("File input changed", e.target.files[0]);
     if (e.target.files[0]) {
       handleFile(e.target.files[0], fileInfo, analyzeButton);
     }
   });
-  
-  // Drop zone click - open file picker
   dropZone.addEventListener("click", (e) => {
     console.log("Drop zone clicked, opening file picker");
     fileInput.click();
   });
-  
-  // Drag handlers
   dropZone.addEventListener("dragenter", (e) => handleDragEnter(e, dropZone));
   dropZone.addEventListener("dragover", (e) => handleDragOver(e, dropZone));
   dropZone.addEventListener("dragleave", (e) => handleDragLeave(e, dropZone));
   dropZone.addEventListener("drop", (e) => handleDrop(e, dropZone, fileInput, fileInfo, analyzeButton));
-
-  // Analyze button
-  analyzeButton.addEventListener("click", () => {
+  if (analyzeHandler) {
+    analyzeButton.removeEventListener("click", analyzeHandler);
+  }
+  analyzeHandler = () => {
     console.log("Analyze button clicked");
     handleAnalyzeClick(analyzeButton);
-  });
-  
+  };
+  analyzeButton.addEventListener("click", analyzeHandler);
   console.log("Analyze module: Initialization complete");
 }
 
-
-/**
- * Handle file selection
- */
 function handleFile(file, fileInfo, analyzeButton) {
   if (!file) return;
   if (!file.type.startsWith("image/")) {
@@ -81,18 +59,12 @@ function handleFile(file, fileInfo, analyzeButton) {
   analyzeButton.disabled = false;
 }
 
-/**
- * Handle drag enter
- */
 function handleDragEnter(e, dropZone) {
   e.preventDefault();
   e.stopPropagation();
   dropZone.classList.add("bg-green-50");
 }
 
-/**
- * Handle drag over
- */
 function handleDragOver(e, dropZone) {
   e.preventDefault();
   e.stopPropagation();
@@ -100,18 +72,12 @@ function handleDragOver(e, dropZone) {
   dropZone.classList.add("bg-green-50");
 }
 
-/**
- * Handle drag leave
- */
 function handleDragLeave(e, dropZone) {
   e.preventDefault();
   e.stopPropagation();
   dropZone.classList.remove("bg-green-50");
 }
 
-/**
- * Handle drop
- */
 function handleDrop(e, dropZone, fileInput, fileInfo, analyzeButton) {
   e.preventDefault();
   e.stopPropagation();
@@ -122,9 +88,6 @@ function handleDrop(e, dropZone, fileInput, fileInfo, analyzeButton) {
   }
 }
 
-/**
- * Handle analyze button click
- */
 async function handleAnalyzeClick(analyzeButton) {
   if (!selectedFile) return alert("Please upload an image");
 
@@ -175,9 +138,6 @@ async function handleAnalyzeClick(analyzeButton) {
   }
 }
 
-/**
- * Display analysis results
- */
 function displayResults(data) {
   resultsView.classList.remove("hidden");
   resultsView.innerHTML = `
@@ -214,8 +174,24 @@ function displayResults(data) {
         <p><strong>Temperature:</strong> ${data.temperature_celsius}°C</p>
         <p><strong>Location:</strong> ${data.location}</p>
       </div>
+      
+      <button id="analyze-another" class="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+        Analyze Another Image
+      </button>
     </div>
   `;
+  document.getElementById("analyze-another").addEventListener("click", resetAnalyzeForm);
+}
+
+function resetAnalyzeForm() {
+  selectedFile = null;
+  const fileInput = document.getElementById("fileInput");
+  fileInput.value = "";
+  fileInfo.classList.add("hidden");
+  fileInfo.textContent = "";
+  analyzeButton.disabled = true;
+  resultsView.classList.add("hidden");
+  resultsView.innerHTML = "";
 }
 
 // Initialize is called after login from auth.js
