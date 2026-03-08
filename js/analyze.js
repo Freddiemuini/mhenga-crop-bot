@@ -94,6 +94,9 @@ async function handleAnalyzeClick(analyzeButton) {
   const location = prompt("Enter location (e.g., Nairobi):", "Nairobi");
   if (!location) return alert("Location is required");
 
+  // ask the user what crop they expect (optional) to help the model
+  const userCrop = prompt("If you know the crop, enter its name (e.g. maize, tomato) or leave blank:", "");
+
   let lat, lon;
   try {
     const geoRes = await fetch(
@@ -111,6 +114,9 @@ async function handleAnalyzeClick(analyzeButton) {
   formData.append("file", selectedFile);
   formData.append("lat", lat);
   formData.append("lon", lon);
+  if (userCrop) {
+    formData.append("crop", userCrop);
+  }
 
   try {
     const token = localStorage.getItem("token");
@@ -140,6 +146,18 @@ async function handleAnalyzeClick(analyzeButton) {
 
 function displayResults(data) {
   resultsView.classList.remove("hidden");
+  let predictionSection = "";
+  if (data.all_predictions && data.all_predictions.length) {
+    predictionSection = `<div class="bg-yellow-50 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold text-yellow-700 mb-2">Model suggestions</h3>
+        <ul>
+          ${data.all_predictions.map(p => `
+            <li>${p.class} (${(p.confidence * 100).toFixed(1)}% confidence)${p.crop_matches ? " &mdash; matches crop" : ""}</li>
+          `).join("")}
+        </ul>
+      </div>`;
+  }
+
   resultsView.innerHTML = `
     <div class="space-y-4">
       <div class="bg-green-50 p-4 rounded-lg">
@@ -147,6 +165,8 @@ function displayResults(data) {
         <p><strong>English Name:</strong> ${data.cropEnglishName || "Unknown"}</p>
         <p><strong>Scientific Name:</strong> <em>${data.cropScientificName || "Unknown"}</em></p>
       </div>
+
+      ${predictionSection}
 
       <div class="bg-red-50 p-4 rounded-lg">
         <h3 class="text-lg font-semibold text-red-600 mb-2">Disease: ${data.diseaseName}</h3>

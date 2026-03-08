@@ -65,12 +65,17 @@ def get_all_predictions(image_file):
         return None
 
 
-def detect_disease(image_file, min_confidence=0.5):
-    """Detect disease using Roboflow AI model
+def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_all=False):
+    """Detect disease using Roboflow AI model and optionally validate against a crop
     
     Args:
         image_file: The image file to analyze
         min_confidence: Minimum confidence threshold (0-1). Defaults to 0.5 (50%)
+        expected_crop: Optional string such as "maize" or "tomato" indicating the
+            crop the user believes is pictured. Used to prioritize/filter predictions.
+        return_all: If True, the full list of predictions will be included in the
+            returned dict under the key ``all_predictions`` and no early return will
+            occur; this is useful for debugging or UI that wants to display choices.
     """
     try:
         image_file.seek(0)
@@ -85,52 +90,70 @@ def detect_disease(image_file, min_confidence=0.5):
 
         logger.info(f"Roboflow API Response: {rf_result}")
 
-        if "predictions" in rf_result and len(rf_result["predictions"]) > 0:
-            for idx, prediction in enumerate(rf_result["predictions"][:3]):
-                disease_name = prediction.get("class", "Unknown Disease")
-                confidence = prediction.get("confidence", 0)
-                
-                logger.info(f"Prediction {idx+1}: '{disease_name}' with confidence: {confidence:.2%}")
-                
-                is_valid, conf, reason = validate_prediction(disease_name, confidence)
-                logger.info(f"Validation result: {reason}")
-                
-                if is_valid:
-                    disease_details = str(prediction)
-                    disease_info = get_disease_info(disease_name)
-                    
-                    logger.info(f"Using prediction: {disease_name} -> Crop: {disease_info.get('crop_name')}")
-                    
-                    return {
-                        "success": True,
-                        "disease_name": disease_name,
-                        "confidence": confidence,
-                        "disease_info": disease_info,
-                        "disease_details": disease_details
-                    }
-            
-            prediction = rf_result["predictions"][0]
-            disease_name = prediction.get("class", "Unknown Disease")
-            confidence = prediction.get("confidence", 0)
-            disease_details = str(prediction)
-            
-            logger.warning(f"No valid predictions found. Using unvalidated: {disease_name}")
-            
-            disease_info = get_disease_info(disease_name)
-            
+        predictions = rf_result.get("predictions", [])
+        structured = []  # will collect predictions with extra metadata
+        for pred in predictions:
+            name = pred.get("class", "Unknown Disease")
+            conf = pred.get("confidence", 0)
+            info = get_disease_info(name)
+            crop_matches = False
+            if expected_crop:
+                key = expected_crop.lower().strip()
+                crop_matches = key in info.get("crop_name", "").lower() or key in info.get("crop_scientific_name", "").lower()
+            structured.append({
+                "class": name,
+                "confidence": conf,
+                "disease_info": info,
+                "crop_matches": crop_matches
+            })
+
+        # if caller just wants all predictions, return them immediately (with success)
+        if return_all:
             return {
                 "success": True,
-                "disease_name": disease_name,
-                "confidence": confidence,
-                "disease_info": disease_info,
-                "disease_details": disease_details,
-                "warning": "Prediction may not be accurate. Please consult a local agricultural officer."
+                "all_predictions": structured,
+                "raw": rf_result
             }
-            
+
+        # try to pick the best valid prediction, prioritizing those matching the expected crop
+        chosen = None
+        warning = None
+        # sort so that crop-matching predictions come first
+        for pred in sorted(structured, key=lambda x: (not x["crop_matches"], -x["confidence"])):
+            name = pred["class"]
+            conf = pred["confidence"]
+            if conf < min_confidence:
+                continue
+            is_valid, conf2, reason = validate_prediction(name, conf)
+            logger.info(f"Evaluating prediction '{name}' ({conf:.2%}): {reason}")
+            if is_valid:
+                chosen = pred
+                break
+        # fallback to first prediction if none passed validity check
+        if not chosen and structured:
+            chosen = structured[0]
+            warning = "Model predictions did not meet validation criteria; using top result."
+
+        if chosen:
+            return_val = {
+                "success": True,
+                "disease_name": chosen["class"],
+                "confidence": chosen["confidence"],
+                "disease_info": chosen["disease_info"],
+                "disease_details": str(chosen)
+            }
+            if warning:
+                return_val["warning"] = warning
+            if expected_crop and not chosen.get("crop_matches"):
+                return_val["warning"] = return_val.get("warning", "") + (
+                    " Prediction does not match expected crop."
+                )
+            # include alternatives for transparency
+            return_val["all_predictions"] = structured
+            return return_val
         else:
-            disease_name = "Unknown Disease"
-            confidence = 0
-            disease_details = "No predictions from model."
+            # nothing at all returned by model
+            logger.warning("No predictions returned from Roboflow model")
             disease_info = {
                 "crop_name": "Unable to Identify",
                 "crop_scientific_name": "Unknown",
@@ -138,15 +161,27 @@ def detect_disease(image_file, min_confidence=0.5):
                 "prevention": ["General good farming practices"],
                 "control": ["Consult local agricultural extension officer for identification and treatment"]
             }
-            logger.warning("No predictions returned from Roboflow model")
-
             return {
                 "success": True,
-                "disease_name": disease_name,
-                "confidence": confidence,
+                "disease_name": "Unknown Disease",
+                "confidence": 0,
                 "disease_info": disease_info,
-                "disease_details": disease_details
+                "disease_details": "No predictions from model.",
+                "all_predictions": structured
             }
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}")
+        return {
+            "success": False,
+            "error": f"Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}"
+        }
+    except Exception as e:
+        logger.error(f"Roboflow API failed: {str(e)}", exc_info=True)
+        return {
+            "success": False,
+            "error": f"Roboflow API failed: {str(e)}"
+        }
 
     except requests.exceptions.HTTPError as e:
         logger.error(f"Roboflow API HTTP Error: {e.response.status_code} - {e.response.text}")
