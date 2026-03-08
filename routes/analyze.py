@@ -13,7 +13,8 @@ analyze_bp = Blueprint('analyze', __name__)
 def debug_test_disease():
     """Debug endpoint to test disease detection without authentication.
 
-    Accepts an optional `crop` form field to exercise the expected_crop logic."
+    Accepts an optional `crop` form field to exercise the expected_crop logic.
+    """
     try:
         file = request.files.get("file")
         expected_crop = request.form.get("crop")
