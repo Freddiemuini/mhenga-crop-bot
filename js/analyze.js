@@ -213,6 +213,13 @@ function displayResults(data) {
         <p><strong>${data.recommendation}</strong></p>
       </div>
 
+      ${data.recommendation_summary ? `
+      <div class="bg-indigo-50 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold text-indigo-700 mb-2">Recommendations</h3>
+        ${data.recommendation_summary.split("\n").map(line => `<p class="mb-1">${line}</p>`).join("")}
+      </div>
+      ` : ""}
+
       <div class="bg-gray-50 p-4 rounded-lg">
         <h3 class="text-lg font-semibold text-gray-700 mb-2">Weather Information</h3>
         <p><strong>Weather:</strong> ${data.weather}</p>
