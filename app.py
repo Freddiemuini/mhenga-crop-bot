@@ -12,7 +12,6 @@ from routes.analyze import analyze_bp
 
 
 def create_app(config_name='development'):
-    """Application factory"""
     app = Flask(__name__)
     
     app.config.from_object(config[config_name])

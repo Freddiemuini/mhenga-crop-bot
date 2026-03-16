@@ -392,7 +392,6 @@ DISEASE_GUIDE = {
 
 
 def get_disease_info(disease_name):
-    """Get disease information from the guide with enhanced matching"""
     if not disease_name:
         return get_default_disease_info()
     
@@ -454,7 +453,6 @@ def get_disease_info(disease_name):
 
 
 def get_default_disease_info():
-    """Return default disease information"""
     return {
         "crop_name": "Unknown Crop",
         "crop_scientific_name": "Unknown",

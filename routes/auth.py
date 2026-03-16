@@ -9,8 +9,6 @@ auth_bp = Blueprint('auth', __name__)
 
 
 def init_auth_routes(app, mail, serializer):
-    """Initialize authentication routes with app and mail context"""
-    
     @auth_bp.route('/signup', methods=['POST'])
     def signup():
         data = request.get_json()

@@ -7,11 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 def validate_prediction(disease_name, confidence):
-    """Validate if prediction makes sense and is trustworthy
-    
-    Returns:
-        (is_valid, confidence_level, reason)
-    """
     if confidence < 0.3:
         return False, confidence, "Confidence too low (< 30%)"
     
@@ -32,7 +27,6 @@ def validate_prediction(disease_name, confidence):
 
 
 def get_roboflow_raw_prediction(image_file):
-    """Get raw Roboflow prediction without processing"""
     try:
         image_file.seek(0)
         response = requests.post(
@@ -49,7 +43,6 @@ def get_roboflow_raw_prediction(image_file):
 
 
 def get_all_predictions(image_file):
-    """Get all predictions from Roboflow, not just the first one"""
     try:
         image_file.seek(0)
         response = requests.post(
@@ -66,17 +59,6 @@ def get_all_predictions(image_file):
 
 
 def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_all=False):
-    """Detect disease using Roboflow AI model and optionally validate against a crop
-    
-    Args:
-        image_file: The image file to analyze
-        min_confidence: Minimum confidence threshold (0-1). Defaults to 0.5 (50%)
-        expected_crop: Optional string such as "maize" or "tomato" indicating the
-            crop the user believes is pictured. Used to prioritize/filter predictions.
-        return_all: If True, the full list of predictions will be included in the
-            returned dict under the key ``all_predictions`` and no early return will
-            occur; this is useful for debugging or UI that wants to display choices.
-    """
     try:
         image_file.seek(0)
         response = requests.post(
