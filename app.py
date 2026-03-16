@@ -14,7 +14,7 @@ from routes.analyze import analyze_bp
 def create_app(config_name='development'):
     app = Flask(__name__)
     
-    app.config.from_object(config[config_name])
+    app.config.from_object(config.get(config_name, config['development']))
     
 
     logging.basicConfig(
@@ -45,6 +45,7 @@ def create_app(config_name='development'):
     return app
 
 
+app = create_app('production')
+
 if __name__ == '__main__':
-    app = create_app('development')
     app.run(debug=True)
