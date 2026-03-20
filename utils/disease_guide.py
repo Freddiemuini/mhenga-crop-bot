@@ -410,8 +410,9 @@ def get_disease_info(disease_name):
             logger.info(f"Found alias match: {disease_key} -> {guide_key} -> Crop: {disease_info['crop_name']}")
             return disease_info
     
+    disease_words = set(disease_key.replace('-', '_').split('_'))
     for crop_keyword, crop_info in CROP_NAME_MAP.items():
-        if crop_keyword in disease_key:
+        if crop_keyword in disease_key or crop_keyword in disease_words:
             logger.info(f"Found crop keyword '{crop_keyword}' in disease name: {disease_key}")
             for guide_key, disease_info in DISEASE_GUIDE.items():
                 if crop_keyword in guide_key or crop_keyword in disease_info.get("crop_name", "").lower():

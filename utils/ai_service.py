@@ -96,6 +96,16 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                 "raw": rf_result
             }
 
+        expected_matched = []
+        if expected_crop:
+            expected_key = expected_crop.lower().strip()
+            expected_matched = [p for p in structured if p.get("crop_matches")]
+            if expected_matched:
+                logger.info(f"Expected crop '{expected_crop}' matched {len(expected_matched)} predictions; using matched list")
+                structured = expected_matched
+            else:
+                logger.info(f"Expected crop '{expected_crop}' had no exact disease match; continuing with all predictions")
+
         chosen = None
         warning = None
         for pred in sorted(structured, key=lambda x: (not x["crop_matches"], -x["confidence"])):
@@ -113,19 +123,29 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             warning = "Model predictions did not meet validation criteria; using top result."
 
         if chosen:
+            disease_info = chosen["disease_info"]
+            crop_info = CROP_NAME_MAP.get(expected_crop.lower().strip()) if expected_crop else None
+            if expected_crop and not chosen.get("crop_matches") and crop_info:
+
+                disease_info = {
+                    "crop_name": crop_info["name"],
+                    "crop_scientific_name": crop_info["scientific"],
+                    "description": f"Model predicted a different crop ({chosen['class']}) than expected ({crop_info['name']}). Please re-upload a clearer {crop_info['name']} image.",
+                    "prevention": ["General good farming practices", "Crop rotation", "Use resistant varieties"],
+                    "control": ["Consult local agricultural extension officer for specific treatment"]
+                }
+                warning = (warning or "") + " Prediction does not match expected crop; using expected crop fallback."
+                logger.info(f"Expected crop mismatch fallback used for '{expected_crop}' (predicted {chosen['class']})")
+
             return_val = {
                 "success": True,
                 "disease_name": chosen["class"],
                 "confidence": chosen["confidence"],
-                "disease_info": chosen["disease_info"],
+                "disease_info": disease_info,
                 "disease_details": str(chosen)
             }
             if warning:
                 return_val["warning"] = warning
-            if expected_crop and not chosen.get("crop_matches"):
-                return_val["warning"] = return_val.get("warning", "") + (
-                    " Prediction does not match expected crop."
-                )
             return_val["all_predictions"] = structured
             return return_val
         else:
