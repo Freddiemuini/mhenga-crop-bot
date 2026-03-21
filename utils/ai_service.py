@@ -61,9 +61,9 @@ def identify_crop(image_file, min_confidence=0.5):
         logger.error(f'Roboflow crop identification error: {str(e)}', exc_info=True)
         return {'success': False, 'error': str(e), 'requires_user_input': True}
 
-def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_all=False):
+def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_all=False, require_crop_match=False):
     try:
-        if not expected_crop:
+        if not expected_crop and not require_crop_match:
             crop_result = identify_crop(image_file)
             if crop_result.get('requires_user_input'):
                 logger.info('Crop model not available; proceeding without crop pre-filtering')
@@ -73,6 +73,8 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
                 expected_crop = crop_result.get('detected_crop')
                 logger.info(f'Auto-identified crop as {expected_crop}')
             image_file.seek(0)
+        elif require_crop_match and not expected_crop:
+            return {'success': False, 'error': 'Crop type is required when require_crop_match is True'}
 
         expected_key = expected_crop.lower().strip() if expected_crop else None
         image_file.seek(0)
@@ -99,13 +101,17 @@ def detect_disease(image_file, min_confidence=0.5, expected_crop=None, return_al
             expected_matched = [p for p in structured if p.get('crop_matches')]
             if not expected_matched and structured:
                 all_detected = sorted(set([p['disease_info'].get('crop_name', 'Unknown').lower() for p in structured if p.get('disease_info')] + ['unknown']))
-                return {
-                    'success': False,
-                    'error': f"Model returned diseases for crop(s) {', '.join(all_detected)} but expected '{expected_key}'. Please use a {expected_key} image or train a dedicated model.",
-                    'all_predictions': structured,
-                    'raw': rf_result,
-                    'expected_crop': expected_key
-                }
+                error_msg = f"Model detected diseases for {', '.join(all_detected)} but you specified '{expected_key}'. Please verify you are analyzing the correct crop image."
+                logger.warning(f'Crop mismatch: expected {expected_key}, detected {all_detected}')
+                if require_crop_match:
+                    return {
+                        'success': False,
+                        'error': error_msg,
+                        'all_predictions': structured,
+                        'raw': rf_result,
+                        'expected_crop': expected_key,
+                        'detected_crops': all_detected
+                    }
             if expected_matched:
                 structured = expected_matched
 

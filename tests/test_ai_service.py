@@ -51,6 +51,6 @@ def test_identify_crop_not_configured():
 def test_detect_disease_crop_mismatch_failure(monkeypatch):
     fake = {'predictions': [{'class': 'tomato_early_blight', 'confidence': 0.89}]}
     monkeypatch.setattr(requests, 'post', lambda *a, **k: DummyResponse(fake))
-    result = ai_service.detect_disease(make_image(), expected_crop='maize')
+    result = ai_service.detect_disease(make_image(), expected_crop='maize', require_crop_match=True)
     assert not result['success']
-    assert 'expected' in result['error'].lower()
+    assert 'expected' in result.get('error', '').lower() or 'verify' in result.get('error', '').lower()
